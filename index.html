@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kalkulator kieszonkowego</title>
+  <style>
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --primary:#3b82f6;
+      --muted:#6b7280;
+      --accent:#10b981;
+      --danger:#ef4444;
+      --glass: rgba(255,255,255,0.6);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:
+        radial-gradient( circle at 10% 10%, rgba(59,130,246,0.06), transparent 10%),
+        radial-gradient( circle at 90% 90%, rgba(16,185,129,0.04), transparent 10%),
+        var(--bg);
+      color:#111827;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:32px;
+    }
+
+    .container{
+      width:100%;
+      max-width:980px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.98));
+      border-radius:14px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.08);
+      overflow:hidden;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:0;
+    }
+
+    @media (max-width:900px){
+      .container{grid-template-columns:1fr; padding:18px}
+    }
+
+    .left{
+      padding:28px;
+    }
+    .right{
+      padding:24px;
+      background:
+        linear-gradient(0deg, rgba(59,130,246,0.03), transparent),
+        linear-gradient(90deg, rgba(16,185,129,0.02), transparent 40%);
+      border-left:1px solid rgba(15,23,42,0.03);
+    }
+    header h1{
+      margin:0 0 6px 0;
+      font-size:20px;
+      letter-spacing:-0.2px;
+    }
+    header p{margin:0;color:var(--muted);font-size:13px}
+
+    .form-row{
+      display:flex;
+      gap:12px;
+      margin-top:18px;
+      flex-wrap:wrap;
+    }
+
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type="number"], input[type="text"], select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(15,23,42,0.06);
+      background:linear-gradient(180deg, #fff, #fbfdff);
+      font-size:15px;
+      outline:none;
+      transition:box-shadow .15s, transform .06s;
+    }
+    input[type="number"]:focus, select:focus{
+      box-shadow:0 6px 18px rgba(59,130,246,0.12);
+      transform:translateY(-1px);
+    }
+
+    .card{
+      background:var(--card);
+      padding:18px;
+      border-radius:12px;
+      margin-top:16px;
+      box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+    }
+
+    .small{
+      font-size:13px;color:var(--muted)
+    }
+
+    .calc-btns{
+      display:flex;gap:8px;margin-top:14px;
+    }
+    button{
+      padding:10px 14px;border-radius:10px;border:0;font-weight:600;cursor:pointer;
+      background:var(--primary);color:white;font-size:15px;
+      box-shadow:0 8px 20px rgba(59,130,246,0.12);
+    }
+    button.secondary{
+      background:transparent;color:var(--primary);border:1px solid rgba(59,130,246,0.12);
+      box-shadow:none;font-weight:600;
+    }
+    button.ghost{
+      background:transparent;color:var(--muted);border:1px solid rgba(15,23,42,0.04)
+    }
+
+    .summary{
+      display:flex;flex-direction:column;gap:10px;
+      margin-top:12px;
+    }
+
+    .summary-row{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:8px 10px;border-radius:8px;
+      background:linear-gradient(180deg, rgba(249,250,251,0.6), rgba(255,255,255,0.4));
+    }
+    .big{
+      font-size:20px;font-weight:700;
+    }
+    .muted{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .legend{
+      display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;
+    }
+    .legend .item{
+      padding:8px 10px;border-radius:8px;background:var(--glass);font-size:13px;color:var(--muted);
+      display:inline-flex;gap:8px;align-items:center;
+    }
+    .pill{display:inline-block;padding:6px 8px;border-radius:8px;font-weight:700}
+
+    .footer-small{font-size:13px;color:var(--muted);margin-top:10px}
+
+    /* little decorative */
+    .hero-emoji{
+      width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));
+      display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:22px;
+      box-shadow:0 6px 18px rgba(59,130,246,0.18);
+    }
+
+    /* input groups layout */
+    .col{flex:1;min-width:160px}
+    .col-2{width:200px}
+    .row-center{display:flex;align-items:center;gap:14px}
+
+    /* subtle transitions for numeric changes */
+    .value-change{
+      transition:transform .25s ease, opacity .25s ease;
+      display:inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="application" aria-label="Kalkulator kieszonkowego">
+    <div class="left">
+      <header>
+        <div style="display:flex;gap:14px;align-items:center">
+          <div class="hero-emoji" aria-hidden="true">💸</div>
+          <div>
+            <h1>Kalkulator kieszonkowego</h1>
+            <p>Wprowadź parametry — zobacz podsumowanie i końcową kwotę.</p>
+          </div>
+        </div>
+      </header>
+
+      <div class="card" aria-live="polite">
+        <label for="base">Kwota bazowa kieszonkowego (zł)</label>
+        <input id="base" type="number" inputmode="decimal" step="0.01" min="0" value="50">
+
+        <div class="form-row" style="margin-top:14px">
+          <div class="col">
+            <label for="absences">Nieobecności (szt.) <span class="small">(-5 zł / 1 nieobecność)</span></label>
+            <input id="absences" type="number" min="0" step="1" value="0">
+          </div>
+          <div class="col">
+            <label for="lateness">Spóźnienia (szt.) <span class="small">(-2 zł / 1 spóźnienie)</span></label>
+            <input id="lateness" type="number" min="0" step="1" value="0">
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <label style="margin-bottom:8px">Premie za oceny</label>
+          <div class="form-row">
+            <div class="col">
+              <label for="grade4">Ilość ocen 4 (+5 zł)</label>
+              <input id="grade4" type="number" min="0" step="1" value="0">
+            </div>
+            <div class="col">
+              <label for="grade5">Ilość ocen 5 (+10 zł)</label>
+              <input id="grade5" type="number" min="0" step="1" value="0">
+            </div>
+            <div class="col">
+              <label for="grade6">Ilość ocen 6 (+15 zł)</label>
+              <input id="grade6" type="number" min="0" step="1" value="0">
+            </div>
+          </div>
+          <div class="footer-small">Możesz wpisywać ile takich ocen było w danym okresie — premia będzie zsumowana.</div>
+        </div>
+
+        <div class="calc-btns">
+          <button id="calc">Oblicz</button>
+          <button class="secondary" id="autoCalc">Auto: włącz aktualizację</button>
+          <button class="ghost" id="reset">Resetuj</button>
+        </div>
+
+        <div id="validation" class="footer-small" style="margin-top:8px;color:var(--danger);display:none"></div>
+
+        <div class="legend" aria-hidden="true">
+          <div class="item"><span class="pill" style="background:rgba(16,185,129,0.12);color:var(--accent)">+Premia</span> Oceny 4/5/6</div>
+          <div class="item"><span class="pill" style="background:rgba(239,68,68,0.06);color:var(--danger)">-Kara</span> Nieobecności / spóźnienia</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px" class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="muted">Podsumowanie (na szybko)</div>
+            <div id="summaryShort" class="big">—</div>
+          </div>
+          <div style="text-align:right">
+            <div class="muted">Stan wyjściowy</div>
+            <div id="baseShort" class="big">—</div>
+          </div>
+        </div>
+        <div class="footer-small">Wynik zaktualizowany po kliknięciu "Oblicz" lub automatycznie gdy włączysz auto.</div>
+      </div>
+
+    </div>
+
+    <div class="right">
+      <h3 style="margin:0">Szczegóły obliczeń</h3>
+      <p class="small" style="margin-top:6px">Tu zobaczysz rozbicie wszystkich elementów i końcową kwotę.</p>
+
+      <div class="card" style="margin-top:14px">
+        <div class="summary" id="details">
+          <div class="summary-row" id="row-base">
+            <div class="muted">Kwota bazowa</div>
+            <div id="val-base" class="value-change">—</div>
+          </div>
+
+          <div class="summary-row" id="row-abs">
+            <div class="muted">Kary — nieobecności (<span id="cnt-abs">0</span> × -5 zł)</div>
+            <div id="val-abs" class="value-change">—</div>
+          </div>
+
+          <div class="summary-row" id="row-late">
+            <div class="muted">Kary — spóźnienia (<span id="cnt-late">0</span> × -2 zł)</div>
+            <div id="val-late" class="value-change">—</div>
+          </div>
+
+          <div class="summary-row" id="row-g4">
+            <div class="muted">Premia za oceny 4 (<span id="cnt-g4">0</span> × +5 zł)</div>
+            <div id="val-g4" class="value-change">—</div>
+          </div>
+
+          <div class="summary-row" id="row-g5">
+            <div class="muted">Premia za oceny 5 (<span id="cnt-g5">0</span> × +10 zł)</div>
+            <div id="val-g5" class="value-change">—</div>
+          </div>
+
+          <div class="summary-row" id="row-g6">
+            <div class="muted">Premia za oceny 6 (<span id="cnt-g6">0</span> × +15 zł)</div>
+            <div id="val-g6" class="value-change">—</div>
+          </div>
+
+          <div class="summary-row" style="margin-top:8px;background:linear-gradient(90deg, rgba(59,130,246,0.06), rgba(16,185,129,0.03));">
+            <div class="muted">Suma zmian (premie + kary)</div>
+            <div id="val-total-changes" class="value-change">—</div>
+          </div>
+
+          <div class="summary-row" style="margin-top:8px;background:linear-gradient(90deg, rgba(16,185,129,0.06), rgba(59,130,246,0.03));">
+            <div class="muted">Wynik końcowy</div>
+            <div id="val-final" class="big value-change">—</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="copyBtn">Kopiuj wynik</button>
+          <button class="secondary" id="printBtn">Drukuj</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="footer-small">Zrobione z myślą o prostej obsłudze — działa na telefonie i komputerze.</div>
+    </div>
+  </div>
+
+  <script>
+    // Stałe biznesowe
+    const PENALTY_ABS = -5;   // nieobecność: -5 zł
+    const PENALTY_LATE = -2;  // spóźnienie: -2 zł
+    const BONUS_G4 = 5;       // ocena 4: +5 zł
+    const BONUS_G5 = 10;      // ocena 5: +10 zł
+    const BONUS_G6 = 15;      // ocena 6: +15 zł
+
+    // Elementy
+    const baseEl = document.getElementById('base');
+    const absEl = document.getElementById('absences');
+    const lateEl = document.getElementById('lateness');
+    const g4El = document.getElementById('grade4');
+    const g5El = document.getElementById('grade5');
+    const g6El = document.getElementById('grade6');
+
+    const calcBtn = document.getElementById('calc');
+    const autoBtn = document.getElementById('autoCalc');
+    const resetBtn = document.getElementById('reset');
+
+    const valBase = document.getElementById('val-base');
+    const valAbs = document.getElementById('val-abs');
+    const valLate = document.getElementById('val-late');
+    const valG4 = document.getElementById('val-g4');
+    const valG5 = document.getElementById('val-g5');
+    const valG6 = document.getElementById('val-g6');
+    const valTotalChanges = document.getElementById('val-total-changes');
+    const valFinal = document.getElementById('val-final');
+
+    const cntAbs = document.getElementById('cnt-abs');
+    const cntLate = document.getElementById('cnt-late');
+    const cntG4 = document.getElementById('cnt-g4');
+    const cntG5 = document.getElementById('cnt-g5');
+    const cntG6 = document.getElementById('cnt-g6');
+
+    const summaryShort = document.getElementById('summaryShort');
+    const baseShort = document.getElementById('baseShort');
+
+    const validation = document.getElementById('validation');
+    const copyBtn = document.getElementById('copyBtn');
+    const printBtn = document.getElementById('printBtn');
+
+    let autoUpdate = false;
+
+    function formatPLN(value){
+      // używamy Intl aby poprawnie sformatować PLN
+      return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN' }).format(value);
+    }
+
+    function parseIntegerSafe(el){
+      const v = parseInt(el.value, 10);
+      if (Number.isNaN(v)) return 0;
+      return Math.max(0, v);
+    }
+    function parseFloatSafe(el){
+      const v = parseFloat(el.value);
+      if (Number.isNaN(v)) return 0;
+      return v;
+    }
+
+    function computeAndRender(){
+      validation.style.display = 'none';
+
+      // pobierz wejścia
+      const base = Number(parseFloatSafe(baseEl));
+      const absences = parseIntegerSafe(absEl);
+      const lates = parseIntegerSafe(lateEl);
+      const g4 = parseIntegerSafe(g4El);
+      const g5 = parseIntegerSafe(g5El);
+      const g6 = parseIntegerSafe(g6El);
+
+      // walidacja prosta
+      if (base < 0) {
+        validation.textContent = "Kwota bazowa nie może być ujemna.";
+        validation.style.display = 'block';
+        return;
+      }
+
+      // obliczenia — robimy krok po kroku, jawnie
+      // kara za nieobecności = absences * -5
+      const penAbs = absences * PENALTY_ABS; // cyfrowo: np. 3 * -5 = -15
+
+      // kara za spóźnienia = lates * -2
+      const penLate = lates * PENALTY_LATE;
+
+      // premie
+      const premG4 = g4 * BONUS_G4;
+      const premG5 = g5 * BONUS_G5;
+      const premG6 = g6 * BONUS_G6;
+
+      // suma zmian = premie + kary
+      const sumChanges = penAbs + penLate + premG4 + premG5 + premG6;
+
+      // wynik końcowy = base + sumChanges
+      const final = base + sumChanges;
+
+      // zaokrąglenie do groszy
+      const finalRounded = Math.round(final * 100) / 100;
+      const sumChangesRounded = Math.round(sumChanges * 100) / 100;
+
+      // renderuj wartości w UI
+      valBase.textContent = formatPLN(base);
+      valAbs.textContent = formatPLN(penAbs);
+      valLate.textContent = formatPLN(penLate);
+      valG4.textContent = formatPLN(premG4);
+      valG5.textContent = formatPLN(premG5);
+      valG6.textContent = formatPLN(premG6);
+
+      valTotalChances = valTotalChanges;
+      valTotalChanges.textContent = (sumChangesRounded >= 0 ? '+' : '') + formatPLN(sumChangesRounded);
+      valFinal.textContent = formatPLN(finalRounded);
+
+      cntAbs.textContent = absences;
+      cntLate.textContent = lates;
+      cntG4.textContent = g4;
+      cntG5.textContent = g5;
+      cntG6.textContent = g6;
+
+      // skrócone podsumowanie
+      summaryShort.textContent = formatPLN(finalRounded);
+      baseShort.textContent = formatPLN(base);
+
+      // drobna animacja "pulse" przy zmianie
+      flashElement(valFinal);
+    }
+
+    function flashElement(el){
+      el.style.transform = 'translateY(-6px)';
+      el.style.opacity = '0.85';
+      setTimeout(()=>{ el.style.transform='translateY(0)'; el.style.opacity='1'; }, 220);
+    }
+
+    // zdarzenia
+    calcBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      computeAndRender();
+    });
+
+    let autoInterval = null;
+    autoBtn.addEventListener('click', ()=>{
+      autoUpdate = !autoUpdate;
+      if (autoUpdate){
+        autoBtn.textContent = 'Auto: wyłącz aktualizację';
+        autoBtn.classList.add('secondary');
+        // nasłuchujemy zmian pól i aktualizujemy natychmiast
+        [baseEl, absEl, lateEl, g4El, g5El, g6El].forEach(el=>{
+          el.addEventListener('input', computeAndRender);
+        });
+        computeAndRender(); // natychmiast
+      } else {
+        autoBtn.textContent = 'Auto: włącz aktualizację';
+        autoBtn.classList.remove('secondary');
+        [baseEl, absEl, lateEl, g4El, g5El, g6El].forEach(el=>{
+          // nie usuwamy wszystkich eventów bezrefleksyjnie, ale możemy zdjąć listener jednorazowy
+          // aby być prostym — reload strony usuwa, ale tutaj usuwamy korzystając z clone trick:
+          const clone = el.cloneNode(true);
+          el.parentNode.replaceChild(clone, el);
+        });
+      }
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      baseEl.value = 50;
+      absEl.value = 0;
+      lateEl.value = 0;
+      g4El.value = 0;
+      g5El.value = 0;
+      g6El.value = 0;
+      computeAndRender();
+    });
+
+    copyBtn.addEventListener('click', async ()=>{
+      const finalText = valFinal.textContent || '—';
+      const details = [
+        `Kwota bazowa: ${valBase.textContent}`,
+        `Nieobecności: ${cntAbs.textContent} × -5 zł = ${valAbs.textContent}`,
+        `Spóźnienia: ${cntLate.textContent} × -2 zł = ${valLate.textContent}`,
+        `Premia 4: ${cntG4.textContent} × +5 zł = ${valG4.textContent}`,
+        `Premia 5: ${cntG5.textContent} × +10 zł = ${valG5.textContent}`,
+        `Premia 6: ${cntG6.textContent} × +15 zł = ${valG6.textContent}`,
+        `Suma zmian: ${valTotalChanges.textContent}`,
+        `Wynik: ${finalText}`
+      ].join('\\n');
+      try {
+        await navigator.clipboard.writeText(details);
+        copyBtn.textContent = 'Skopiowano!';
+        setTimeout(()=> copyBtn.textContent = 'Kopiuj wynik', 1400);
+      } catch(e){
+        copyBtn.textContent = 'Kopiowanie nieudane';
+        setTimeout(()=> copyBtn.textContent = 'Kopiuj wynik', 1400);
+      }
+    });
+
+    printBtn.addEventListener('click', ()=>{
+      window.print();
+    });
+
+    // pierwsze obliczenie
+    computeAndRender();
+
+    // accessibility: allow Enter to compute when focus in inputs
+    [baseEl, absEl, lateEl, g4El, g5El, g6El].forEach(inp=>{
+      inp.addEventListener('keydown', (e)=>{
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          computeAndRender();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
